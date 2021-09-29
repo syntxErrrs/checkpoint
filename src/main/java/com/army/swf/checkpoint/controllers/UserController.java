@@ -5,10 +5,13 @@ import com.army.swf.checkpoint.models.User;
 import com.army.swf.checkpoint.models.UserDTO;
 import com.army.swf.checkpoint.repositories.UserRepository;
 import com.army.swf.checkpoint.services.UserService;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/users")
@@ -27,36 +30,34 @@ public class UserController {
 
     @PostMapping
     UserDTO saveNewUser(@RequestBody User user) {
-        User savedUser = this.userRepository.save(user);
-        return new UserDTO(savedUser);
+        return new UserDTO(this.userRepository.save(user));
     }
 
     @GetMapping("/{id}")
-    UserDTO getUserById(@PathVariable Long id) {
-        //todo handle when user is not found
-        User requestedUser = this.userRepository.findById(id).get();
-        return new UserDTO(requestedUser);
+    ResponseEntity<UserDTO> getUserById(@PathVariable Long id) {
+        Optional<User> user = this.userRepository.findById(id);
+        UserDTO userDTO = user.map(UserDTO::new).orElseGet(UserDTO::new);
+        HttpStatus httpStatus = (user.isPresent()) ? HttpStatus.OK : HttpStatus.BAD_REQUEST;
+        return new ResponseEntity<>(userDTO, httpStatus);
     }
 
     @PatchMapping("/{id}")
-    UserDTO updateUserEmail(@PathVariable Long id, @RequestBody HashMap<String, String> email) {
-        //todo handle when user is not found
-        User user = this.userRepository.findById(id).get();
-        user.setEmail(email.get("email"));
-        return new UserDTO(user);
+    ResponseEntity<UserDTO> updateUserEmail(@PathVariable Long id, @RequestBody HashMap<String, String> email) {
+        Optional<User> user = this.userRepository.findById(id);
+        if (user.isPresent()) user.get().setEmail(email.get("email"));
+        UserDTO userDTO = user.map(UserDTO::new).orElseGet(UserDTO::new);
+        HttpStatus httpStatus = (user.isPresent()) ? HttpStatus.OK : HttpStatus.BAD_REQUEST;
+        return new ResponseEntity<>(userDTO, httpStatus);
     }
 
     @DeleteMapping("/{id}")
-    Map<String, Long> deleteUserById(@PathVariable Long id) throws Exception {
-        //todo handle when user is not found
-        try {
-            this.userRepository.deleteById(id);
-        } catch (Exception e) {
-            throw new Exception(e.getMessage());
-        }
+    ResponseEntity<Map<String, Long>> deleteUserById(@PathVariable Long id) throws Exception {
+        Optional<User> user = this.userRepository.findById(id);
+        HttpStatus httpStatus = user.isPresent() ? HttpStatus.OK : HttpStatus.BAD_REQUEST;
+        if (user.isPresent()) this.userRepository.deleteById(id);
         Map<String, Long> returnMap = new HashMap<>();
         returnMap.put("count", this.userRepository.count());
-        return returnMap;
+        return new ResponseEntity<>(returnMap, httpStatus);
     }
 
     @PostMapping("/authenticate")
