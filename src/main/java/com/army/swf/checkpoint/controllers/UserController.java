@@ -1,5 +1,6 @@
 package com.army.swf.checkpoint.controllers;
 
+import com.army.swf.checkpoint.exceptions.InvalidIdException;
 import com.army.swf.checkpoint.models.AuthDTO;
 import com.army.swf.checkpoint.models.User;
 import com.army.swf.checkpoint.models.UserDTO;
@@ -18,6 +19,7 @@ import java.util.Optional;
 public class UserController {
     private final UserRepository userRepository;
     private final UserService userService;
+
     public UserController(UserRepository userRepository, UserService userService) {
         this.userRepository = userRepository;
         this.userService = userService;
@@ -34,30 +36,27 @@ public class UserController {
     }
 
     @GetMapping("/{id}")
-    ResponseEntity<UserDTO> getUserById(@PathVariable Long id) {
-        Optional<User> user = this.userRepository.findById(id);
-        UserDTO userDTO = user.map(UserDTO::new).orElseGet(UserDTO::new);
-        HttpStatus httpStatus = (user.isPresent()) ? HttpStatus.OK : HttpStatus.BAD_REQUEST;
-        return new ResponseEntity<>(userDTO, httpStatus);
+    ResponseEntity<UserDTO> getUserById(@PathVariable Long id) throws InvalidIdException {
+        if (this.userRepository.findById(id).isEmpty()) throw new InvalidIdException(
+                "Requested User ID does not exist."
+        );
+        return new ResponseEntity<>(new UserDTO(userRepository.findById(id).get()), HttpStatus.OK);
     }
 
     @PatchMapping("/{id}")
-    ResponseEntity<UserDTO> updateUserEmail(@PathVariable Long id, @RequestBody HashMap<String, String> email) {
+    ResponseEntity<UserDTO> updateUserEmail(@PathVariable Long id, @RequestBody HashMap<String, String> email) throws InvalidIdException {
         Optional<User> user = this.userRepository.findById(id);
-        if (user.isPresent()) user.get().setEmail(email.get("email"));
-        UserDTO userDTO = user.map(UserDTO::new).orElseGet(UserDTO::new);
-        HttpStatus httpStatus = (user.isPresent()) ? HttpStatus.OK : HttpStatus.BAD_REQUEST;
-        return new ResponseEntity<>(userDTO, httpStatus);
+        if (user.isEmpty()) throw new InvalidIdException("Requested User ID does not exist.");
+        user.get().setEmail(email.get("email"));
+        return new ResponseEntity<>(new UserDTO(user.get()), HttpStatus.OK);
     }
 
     @DeleteMapping("/{id}")
-    ResponseEntity<Map<String, Long>> deleteUserById(@PathVariable Long id) throws Exception {
-        Optional<User> user = this.userRepository.findById(id);
-        HttpStatus httpStatus = user.isPresent() ? HttpStatus.OK : HttpStatus.BAD_REQUEST;
-        if (user.isPresent()) this.userRepository.deleteById(id);
-        Map<String, Long> returnMap = new HashMap<>();
-        returnMap.put("count", this.userRepository.count());
-        return new ResponseEntity<>(returnMap, httpStatus);
+    ResponseEntity<Map<String, Long>> deleteUserById(@PathVariable Long id) throws InvalidIdException {
+        if (this.userRepository.findById(id).isEmpty())
+            throw new InvalidIdException("Requested User ID does not exist.");
+        this.userRepository.deleteById(id);
+        return new ResponseEntity<>(new HashMap<>() {{put("count", userRepository.count());}}, HttpStatus.OK);
     }
 
     @PostMapping("/authenticate")
