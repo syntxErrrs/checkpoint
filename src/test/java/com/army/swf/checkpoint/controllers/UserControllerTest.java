@@ -53,7 +53,7 @@ public class UserControllerTest {
     @Transactional
     @Rollback
     @Test
-    void saveNewUser() throws Exception {
+    void saveNewUserSavesNewUserWhenValid() throws Exception {
         String jsonRequest = """
                 {
                     "email": "example@example.com",
@@ -68,6 +68,26 @@ public class UserControllerTest {
         mvc.perform(request)
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.email", is("example@example.com")));
+
+    }
+
+    @Transactional
+    @Rollback
+    @Test
+    void saveNewUserThrowsBadRequestExceptionWhenInvalid() throws Exception {
+        String jsonRequest = """
+                {
+                    "email": "example@example.com",
+                }
+                """;
+
+        MockHttpServletRequestBuilder request = post("/users")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(jsonRequest);
+
+        mvc.perform(request)
+                .andExpect(status().isBadRequest());
+
     }
 
     @Transactional

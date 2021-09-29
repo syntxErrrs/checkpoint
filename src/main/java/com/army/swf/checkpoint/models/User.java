@@ -8,8 +8,14 @@ public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+    @Column(nullable = false)
     private String email;
+    @Column(nullable = false)
     private String password;
+
+    public User() {
+
+    }
 
     public User(String email, String password) {
         this.email = email;

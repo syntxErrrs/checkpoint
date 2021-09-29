@@ -6,6 +6,7 @@ import com.army.swf.checkpoint.models.User;
 import com.army.swf.checkpoint.models.UserDTO;
 import com.army.swf.checkpoint.repositories.UserRepository;
 import com.army.swf.checkpoint.services.UserService;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -31,7 +32,7 @@ public class UserController {
     }
 
     @PostMapping
-    UserDTO saveNewUser(@RequestBody User user) {
+    UserDTO saveNewUser(@RequestBody User user) throws DataIntegrityViolationException {
         return new UserDTO(this.userRepository.save(user));
     }
 

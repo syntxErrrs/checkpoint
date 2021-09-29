@@ -4,9 +4,6 @@ public class UserDTO {
     Long id;
     String email;
 
-    public UserDTO() {
-
-    }
     public UserDTO(User user) {
         this.id = user.getId();
         this.email = user.getEmail();
